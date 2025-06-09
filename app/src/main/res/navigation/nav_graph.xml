@@ -1,0 +1,209 @@
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/loginFragment">
+    <!-- Login Fragment -->
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.legcurvaturedetection.Login"
+        android:label="Login">
+        <action
+            android:id="@+id/action_loginFragment_to_signup"
+            app:destination="@id/signup" />
+        <action
+            android:id="@+id/action_login_to_home"
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true"/>
+
+
+
+    </fragment>
+
+    <!-- Signup Fragment -->
+    <fragment
+        android:id="@+id/signup"
+        android:name="com.example.legcurvaturedetection.Signup"
+        android:label="Sign Up">
+        <action
+            android:id="@+id/action_signup_to_loginFragment"
+            app:destination="@id/loginFragment" />
+    </fragment>
+
+    <!-- HOME Fragment -->
+    <fragment
+        android:id="@+id/nav_home"
+        android:name="com.example.legcurvaturedetection.HOME"
+        android:label="Home">
+
+        <!-- Navigate to History -->
+        <action
+            android:id="@+id/action_to_history"
+            app:destination="@id/nav_history" />
+
+        <!-- Navigate to Profile -->
+        <action
+            android:id="@+id/action_to_profile"
+            app:destination="@id/nav_profile" />
+
+        <!-- Navigate to About Us -->
+        <action
+            android:id="@+id/action_to_about"
+            app:destination="@id/nav_about" />
+
+        <!-- Navigate to Upload -->
+        <action
+            android:id="@+id/action_to_upload"
+            app:destination="@id/nav_upload" />
+    </fragment>
+
+    <!-- History Fragment -->
+    <fragment
+        android:id="@+id/nav_history"
+        android:name="com.example.legcurvaturedetection.History"
+        android:label="History">
+
+        <!-- Navigate back to Home -->
+        <action
+            android:id="@+id/action_back_to_home"
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false" />
+
+        <!-- Navigate to Profile from History -->
+        <action
+            android:id="@+id/action_to_profile"
+            app:destination="@id/nav_profile"
+            app:popUpTo="@id/nav_home" />
+        <action
+            android:id="@+id/action_to_Chat"
+            app:destination="@id/nav_chat"
+            app:popUpTo="@id/nav_home" />
+        <action
+            android:id="@+id/action_to_help"
+            app:destination="@id/help"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false"/>
+    </fragment>
+
+    <!-- Upload Fragment -->
+    <fragment
+        android:id="@+id/nav_upload"
+        android:name="com.example.legcurvaturedetection.TakeAndUpload"
+        android:label="Upload">
+
+
+        <action
+            android:id="@+id/action_back_to_home"
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false" />
+
+
+        <action
+            android:id="@+id/action_to_profile"
+            app:destination="@id/nav_profile"
+            app:popUpTo="@id/nav_home" />
+        <action
+            android:id="@+id/action_to_Chat"
+            app:destination="@id/nav_chat"
+            app:popUpTo="@id/nav_home" />
+        <action
+            android:id="@+id/action_to_help"
+            app:destination="@id/help"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false"/>
+    </fragment>
+
+    <!-- Profile Fragment -->
+    <fragment
+        android:id="@+id/nav_profile"
+        android:name="com.example.legcurvaturedetection.Profile"
+        android:label="Profile">
+
+        <!-- Navigate back to Home -->
+        <action
+            android:id="@+id/action_back_to_home"
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false" />
+        <action
+            android:id="@+id/action_to_Chat"
+            app:destination="@id/nav_chat"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false" />
+        <action
+            android:id="@+id/action_profile_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false" />
+
+    </fragment>
+
+    <!-- About Us Fragment -->
+    <fragment
+        android:id="@+id/nav_about"
+        android:name="com.example.legcurvaturedetection.AboutUs"
+        android:label="About Us">
+        <action
+            android:id="@+id/action_back_to_home"
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false"/>
+        <action
+            android:id="@+id/action_to_profile"
+            app:destination="@id/nav_profile"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false"/>
+        <action
+            android:id="@+id/action_to_Chat"
+            app:destination="@id/nav_chat"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false"/>
+
+        <action
+            android:id="@+id/action_to_help"
+            app:destination="@id/help"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false"/>
+
+
+
+
+    </fragment>
+    <fragment
+        android:id="@+id/nav_chat"
+        android:name="com.example.legcurvaturedetection.ChatFragment"
+        android:label="Chat">
+        <action
+            android:id="@+id/action_back_to_home"
+            app:destination="@id/nav_home"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false"/>
+        <action
+            android:id="@+id/action_to_profile"
+            app:destination="@id/nav_profile"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false"/>
+
+
+    </fragment>
+    <fragment
+        android:id="@+id/help"
+        android:name="com.example.legcurvaturedetection.HelpFragment"
+        android:label="fragment_help"
+        tools:layout="@layout/fragment_help" />
+    <action
+        android:id="@+id/action_to_home"
+        app:destination="@id/nav_home"
+        app:popUpTo="@id/nav_home"
+        app:popUpToInclusive="false"/>
+    <action
+        android:id="@+id/action_to_chat"
+        app:destination="@id/nav_chat"
+
+        app:popUpToInclusive="false"/>
+
+
+</navigation>
