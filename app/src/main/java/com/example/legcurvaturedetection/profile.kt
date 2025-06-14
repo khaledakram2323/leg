@@ -216,7 +216,7 @@ class Profile : Fragment() {
         loginPrefs.edit().clear().apply()
         auth.signOut()
         findNavController().navigate(R.id.action_profile_to_login)
-        requireActivity().finish()
+
     }
 
     private fun openAppSettings() {

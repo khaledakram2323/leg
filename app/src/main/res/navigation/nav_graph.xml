@@ -29,6 +29,10 @@
         <action
             android:id="@+id/action_signup_to_loginFragment"
             app:destination="@id/loginFragment" />
+        <action
+            android:id="@+id/action_signup_to_home"
+            app:destination="@id/nav_home" />
+
     </fragment>
 
     <!-- HOME Fragment -->
@@ -99,6 +103,12 @@
             app:destination="@id/nav_home"
             app:popUpTo="@id/nav_home"
             app:popUpToInclusive="false" />
+        <action
+            android:id="@+id/action_takeAndUpload_to_History"
+            app:destination="@id/nav_history"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false" />
+
 
 
         <action
