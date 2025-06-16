@@ -2,57 +2,68 @@
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
+
     android:layout_margin="8dp"
     android:layout_height="wrap_content"
     card_view:cardCornerRadius="12dp"
-    card_view:cardElevation="4dp">
+    card_view:cardElevation="4dp"
+    android:background="@drawable/rounded_border">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <ImageView
+            android:id="@+id/historyImage"
+            android:layout_width="170dp"
+            android:layout_height="220dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/images"
+           />
+
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
-
-        <ImageView
-            android:id="@+id/historyImage"
-            android:layout_width="match_parent"
-            android:layout_height="180dp"
-            android:scaleType="centerCrop"
-            android:src="@drawable/images"
-            android:layout_marginBottom="8dp" />
-
+       >
         <TextView
             android:id="@+id/nameText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Name"
-            android:textSize="22sp"
-            android:textStyle="bold" />
-
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:padding="4dp"/>
         <TextView
             android:id="@+id/dateText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Date"
-            android:textSize="18sp"
-            android:layout_marginTop="4dp" />
+            android:textSize="16sp"
+            android:layout_marginTop="4dp"
+            android:padding="4dp"/>
 
-        <TextView
-            android:id="@+id/placeText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Place"
-            android:textSize="18sp"
-            android:layout_marginTop="2dp" />
+
 
         <TextView
             android:id="@+id/testKeyText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Test Key"
-            android:textSize="18sp"
-            android:layout_marginTop="2dp" />
-
+            android:textSize="15sp"
+            android:layout_marginTop="2dp"
+            android:padding="4dp"/>
+        <ImageView
+            android:id="@+id/deleteicon"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginLeft="140dp"
+            android:src="@drawable/ic_delete"
+            android:layout_marginTop="70dp"/>
+    </LinearLayout>
 
     </LinearLayout>
 </androidx.cardview.widget.CardView>

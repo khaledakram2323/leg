@@ -70,10 +70,16 @@
 
         <!-- Navigate back to Home -->
         <action
+            android:id="@+id/action_history_to_loginFragment"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false" />
+        <action
             android:id="@+id/action_back_to_home"
             app:destination="@id/nav_home"
             app:popUpTo="@id/nav_home"
             app:popUpToInclusive="false" />
+
 
         <!-- Navigate to Profile from History -->
         <action
@@ -108,6 +114,12 @@
             app:destination="@id/nav_history"
             app:popUpTo="@id/nav_home"
             app:popUpToInclusive="false" />
+        <action
+            android:id="@+id/action_takeAndUpload_to_loginFragment"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_home"
+            app:popUpToInclusive="false" />
+
 
 
 

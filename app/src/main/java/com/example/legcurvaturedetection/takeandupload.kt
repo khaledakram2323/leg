@@ -1,37 +1,49 @@
 package com.example.legcurvaturedetection
 
 import android.Manifest
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.LinearInterpolator
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.legcurvaturedetection.databinding.FragmentTakeanduploadBinding
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
@@ -41,14 +53,35 @@ class TakeAndUpload : Fragment() {
     private val binding get() = _binding!!
     private lateinit var photoUri: Uri
     private var currentImageUri: Uri? = null
+    private val db = FirebaseFirestore.getInstance()
+    private var isButtonClickInProgress = false
+    private var waitAnimator: ObjectAnimator? = null
+
 
     companion object {
         const val API_KEY = "cYULQffju5LW0Te07G3r"
-        const val REQUEST_CODE_PERMISSIONS = 1001
-        val REQUIRED_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(Manifest.permission.CAMERA, Manifest.permission.READ_MEDIA_IMAGES)
+        private const val CLICK_DEBOUNCE_DELAY_MS = 1000L // 1-second debounce
+    }
+
+    private val requiredPermissions = mutableListOf(
+        Manifest.permission.CAMERA
+    ).apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            add(Manifest.permission.READ_MEDIA_IMAGES)
         } else {
-            arrayOf(Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE)
+            add(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+    }.toTypedArray()
+
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        isButtonClickInProgress = false
+        if (permissions.all { it.value }) {
+            launchCamera()
+        } else {
+            Toast.makeText(requireContext(), "Permissions denied. Some features may not work.", Toast.LENGTH_SHORT).show()
+            showSettingsDialog()
         }
     }
 
@@ -57,6 +90,7 @@ class TakeAndUpload : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentTakeanduploadBinding.inflate(inflater, container, false)
+        val view = binding.root
 
         binding.icHome.setOnClickListener {
             findNavController().navigate(R.id.action_to_help)
@@ -67,47 +101,34 @@ class TakeAndUpload : Fragment() {
         }
 
         binding.takePhotoButton.setOnClickListener {
-            if (hasPermissions()) launchCamera()
-            else requestPermissions()
+            if (!isButtonClickInProgress) {
+                isButtonClickInProgress = true
+                if (hasPermissions()) {
+                    launchCamera()
+                } else {
+                    requestPermissions()
+                }
+                Handler(Looper.getMainLooper()).postDelayed({
+                    isButtonClickInProgress = false
+                }, CLICK_DEBOUNCE_DELAY_MS)
+            }
         }
 
         binding.uploadPhotoButton.setOnClickListener {
             pickImageLauncher.launch("image/*")
         }
 
-        return binding.root
+        return view
     }
 
     private fun hasPermissions(): Boolean {
-        return REQUIRED_PERMISSIONS.all {
+        return requiredPermissions.all {
             ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_GRANTED
         }
     }
 
     private fun requestPermissions() {
-        requestPermissions(REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                launchCamera()
-            } else {
-                if (permissions.any {
-                        !ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), it)
-                    }) {
-                    showSettingsDialog()
-                } else {
-                    toast("Permissions denied.")
-                }
-            }
-        }
+        permissionLauncher.launch(requiredPermissions)
     }
 
     private fun launchCamera() {
@@ -139,39 +160,60 @@ class TakeAndUpload : Fragment() {
     }
 
     private fun uploadImage(uri: Uri) {
-        val bytes = try {
-            requireContext().contentResolver.openInputStream(uri)?.readBytes()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
+        // Show ProgressBar and start animation
+        binding.loadingOverlay.visibility = View.VISIBLE
+        binding.wait.visibility = View.VISIBLE
+        waitAnimator = ObjectAnimator.ofFloat(binding.wait, "rotation", 0f, 360f).apply {
+            duration = 800
+            repeatCount = ValueAnimator.INFINITE
+            start()
         }
 
-        if (bytes == null) {
-            toast("Failed to read image.")
-            return
+        lifecycleScope.launch(Dispatchers.IO) {
+            val compressedBytes = try {
+                val bitmap = BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(uri))
+                val outputStream = ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+                bitmap.recycle()
+                outputStream.toByteArray()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+
+            withContext(Dispatchers.Main) {
+                if (compressedBytes == null) {
+                    stopSpinner()
+                    toast("Failed to read image.")
+                    return@withContext
+                }
+
+                val requestBody = compressedBytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
+                val body = MultipartBody.Part.createFormData("file", "image.jpg", requestBody)
+
+                RetrofitInstance.api.inferViaFile(API_KEY, body)
+                    .enqueue(object : Callback<RoboflowResponse> {
+                        override fun onResponse(
+                            call: Call<RoboflowResponse>,
+                            response: Response<RoboflowResponse>
+                        ) {
+                            stopSpinner()
+                            if (response.isSuccessful) {
+                                displayPredictions(response.body()?.predictions)
+                            } else {
+                                toast("Server error: ${response.code()}")
+                            }
+                        }
+
+                        override fun onFailure(call: Call<RoboflowResponse>, t: Throwable) {
+                            stopSpinner()
+                            toast("Network error: ${t.localizedMessage}")
+                        }
+                    })
+            }
         }
-
-        val requestBody = bytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
-        val body = MultipartBody.Part.createFormData("file", "image.jpg", requestBody)
-
-        RetrofitInstance.api.inferViaFile(API_KEY, body)
-            .enqueue(object : Callback<RoboflowResponse> {
-                override fun onResponse(
-                    call: Call<RoboflowResponse>,
-                    response: Response<RoboflowResponse>
-                ) {
-                    if (response.isSuccessful) {
-                        displayPredictions(response.body()?.predictions)
-                    } else {
-                        toast("Server error: ${response.code()}")
-                    }
-                }
-
-                override fun onFailure(call: Call<RoboflowResponse>, t: Throwable) {
-                    toast("Network error: ${t.localizedMessage}")
-                }
-            })
     }
+
 
     private fun showSettingsDialog() {
         AlertDialog.Builder(requireContext())
@@ -227,59 +269,82 @@ class TakeAndUpload : Fragment() {
         closeButton.setOnClickListener { dialog.dismiss() }
 
         saveButton.setOnClickListener {
-            val currentDate = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-
-            val historyItem = HistoryItem(
-                name = "Leg Scan ${System.currentTimeMillis()}",
+            val currentDate = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date())
+            val newItem = HistoryItem(
+                name = "Leg Analysis",
                 date = currentDate,
-                place = "Mobile App",
-                result = resultString,
+                result = resultString.trim(),
                 imageUri = imageUri.toString()
             )
 
-            saveHistoryItem(historyItem)
-
-            toast("Result saved to history")
-
+            saveHistoryItem(newItem)
+            toast("Saved to history.")
             dialog.dismiss()
-
-            // Navigate to History screen
-            findNavController().navigate(R.id.action_takeAndUpload_to_History)
         }
 
         dialog.show()
     }
+
     private fun saveHistoryItem(item: HistoryItem) {
-        val sharedPref = requireContext().getSharedPreferences("history_prefs", Context.MODE_PRIVATE)
-        val gson = Gson()
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val userId = currentUser?.uid ?: ""
+        val historyData = hashMapOf(
+            "name" to item.name,
+            "date" to item.date,
+            "result" to item.result,
+            "imageUri" to item.imageUri,
+            "userId" to userId
+        )
+        android.util.Log.d("FirestoreData", "Saving: $historyData")
 
-        // Get existing items
-        val existingItems = getHistoryList().toMutableList()
-
-        // Add new item
-        existingItems.add(item)
-
-        // Save back
-        sharedPref.edit()
-            .putString("history_list", gson.toJson(existingItems))
-            .apply()
+        db.collection("history")
+            .add(historyData)
+            .addOnSuccessListener {
+                toast("Successfully saved to Firestore")
+            }
+            .addOnFailureListener { e ->
+                toast("Failed to save to Firestore: ${e.message}")
+                android.util.Log.e("FirestoreError", "Save failed", e)
+            }
     }
 
-    private fun getHistoryList(): List<HistoryItem> {
-        val sharedPref = requireContext().getSharedPreferences("history_prefs", Context.MODE_PRIVATE)
-        val gson = Gson()
-        val json = sharedPref.getString("history_list", null)
+    private fun getHistoryList(callback: (List<HistoryItem>) -> Unit) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        val userId = currentUser?.uid ?: ""
 
-        return if (json != null) {
-            val type = object : TypeToken<List<HistoryItem>>() {}.type
-            gson.fromJson(json, type) ?: emptyList()
-        } else {
-            emptyList()
-        }
+        db.collection("history")
+            .whereEqualTo("userId", userId)
+            .get()
+            .addOnSuccessListener { result ->
+                val historyList = result.documents.mapNotNull { doc ->
+                    try {
+                        HistoryItem(
+                            name = doc.getString("name") ?: "",
+                            date = doc.getString("date") ?: "",
+                            result = doc.getString("result") ?: "",
+                            imageUri = doc.getString("imageUri"),
+                            userId = doc.getString("userId")
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                callback(historyList)
+            }
+            .addOnFailureListener { e ->
+                toast("Failed to load history: ${e.message}")
+                callback(emptyList())
+            }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
+    private fun stopSpinner() {
+        waitAnimator?.cancel()
+        binding.wait.visibility = View.GONE
+        binding.loadingOverlay.visibility = View.GONE
+    }
+
 }

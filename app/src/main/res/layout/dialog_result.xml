@@ -34,30 +34,34 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:gravity="end">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/saveButton"
                 style="@style/CustomButtonStyle"
-                android:layout_width="wrap_content"
+                android:layout_width="200dp"
                 android:layout_height="wrap_content"
                 android:text="save"
                 android:padding="3dp"
                 android:gravity="center"
+                android:textSize="18sp"
+                android:layout_gravity="center"
                 android:layout_marginBottom="20dp"/>
 
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/closeButton"
                 style="@style/CustomButtonStyle"
-                android:layout_width="wrap_content"
+                android:layout_width="200dp"
                 android:layout_height="wrap_content"
                 android:text="Close"
+                android:layout_gravity="center"
                 android:gravity="center"
-                android:layout_marginStart="8dp"
+                android:textSize="18sp"
+
                 android:layout_marginBottom="20dp"
-                android:layout_marginLeft="10dp"/>
+               />
         </LinearLayout>
     </LinearLayout>
 
